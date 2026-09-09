@@ -1,0 +1,44 @@
+# macOS
+.DS_Store
+.Trashes
+
+# Python
+__pycache__/
+.Python
+*.dist-info/
+dist/
+build/
+*.manifest
+*.spec
+
+# Virtual environments (uv, venv, conda, etc.)
+.venv/
+venv/
+env/
+.uv/
+
+# Jupyter
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+profile_default/
+ipython_config.py
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# ML / data-science artifacts (saved models, caches)
+*.pkl
+*.pickle
+*.joblib
+*.h5
+*.hdf5
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.safetensors
+wandb/
+mlruns/
+.neptune/
