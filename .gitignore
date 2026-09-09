@@ -27,6 +27,9 @@ ipython_config.py
 .env
 .env.*
 !.env.example
+.python-version
+pyproject.toml
+uv.lock
 
 # ML / data-science artifacts (saved models, caches)
 *.pkl
