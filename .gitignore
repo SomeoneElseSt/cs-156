@@ -45,3 +45,6 @@ uv.lock
 wandb/
 mlruns/
 .neptune/
+
+# Shared datasets
+/data/
