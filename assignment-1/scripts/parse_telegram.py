@@ -10,6 +10,10 @@ sent, and writes them to a CSV with one row per unique message:
     timestamp           when the message was sent (ISO 8601)
     label               left empty to be filled in later (reminder = 1, other = 0)
 
+Two filters are applied before writing: messages from the first few days are
+dropped (mostly assistant setup), as are messages that only consist of a
+filler reply such as "yes" or "lgtm", which carry no meaning on their own.
+
 The raw export and the resulting CSV contain personal messages, so they are
 kept out of the repository.
 
@@ -20,7 +24,7 @@ import csv
 import hashlib
 import re
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from bs4 import BeautifulSoup
@@ -29,6 +33,17 @@ USER_NAME = "Stiven Triana"
 REMIND_PATTERN = re.compile(r"\bremind\w*", re.IGNORECASE)
 TIMESTAMP_FORMAT = "%d %B %Y, %H:%M:%S"
 CSV_COLUMNS = ["id", "message", "has_remind_keyword", "timestamp", "label"]
+SETUP_DAYS = 2
+NON_WORD_PATTERN = re.compile(r"[^\w\s]")
+FILLER_PHRASES = frozenset(
+    [
+        "yes", "no", "y", "n", "yep", "yeah", "yup", "nope", "nah",
+        "ok", "okay", "k", "kk", "sure", "go ahead", "do it", "sounds good",
+        "lgtm", "thanks", "thank you", "thx", "ty", "cool", "nice", "great",
+        "perfect", "done", "continue", "proceed", "correct", "right",
+        "fine", "approved", "confirmed", "hey", "hi", "hello",
+    ]
+)
 
 
 def extract_text(text_div) -> str:
@@ -75,6 +90,32 @@ def extract_user_messages(html_path: Path) -> list[dict]:
     return messages
 
 
+def drop_setup_period(messages: list[dict]) -> list[dict]:
+    timestamps = [
+        datetime.fromisoformat(item["timestamp"])
+        for item in messages
+        if item["timestamp"]
+    ]
+    if not timestamps:
+        return messages
+
+    cutoff = min(timestamps) + timedelta(days=SETUP_DAYS)
+    return [
+        item
+        for item in messages
+        if not item["timestamp"] or datetime.fromisoformat(item["timestamp"]) >= cutoff
+    ]
+
+
+def is_filler(text: str) -> bool:
+    normalized = " ".join(NON_WORD_PATTERN.sub(" ", text.lower()).split())
+    return normalized in FILLER_PHRASES
+
+
+def drop_filler(messages: list[dict]) -> list[dict]:
+    return [item for item in messages if not is_filler(item["message"])]
+
+
 def build_rows(messages: list[dict]) -> list[dict]:
     rows = []
     seen_ids = set()
@@ -100,8 +141,10 @@ def main() -> int:
         print("usage: parse_telegram.py <messages.html> <output.csv>")
         return 1
 
-    messages = extract_user_messages(Path(sys.argv[1]))
-    rows = build_rows(messages)
+    all_messages = extract_user_messages(Path(sys.argv[1]))
+    after_setup = drop_setup_period(all_messages)
+    after_filler = drop_filler(after_setup)
+    rows = build_rows(after_filler)
 
     with open(sys.argv[2], "w", newline="", encoding="utf-8") as output_file:
         writer = csv.DictWriter(output_file, fieldnames=CSV_COLUMNS)
@@ -109,7 +152,9 @@ def main() -> int:
         writer.writerows(rows)
 
     keyword_count = sum(row["has_remind_keyword"] for row in rows)
-    print(f"user messages: {len(messages)}")
+    print(f"user messages: {len(all_messages)}")
+    print(f"after dropping first {SETUP_DAYS} days: {len(after_setup)}")
+    print(f"after dropping filler replies: {len(after_filler)}")
     print(f"after dedup: {len(rows)}")
     print(f"has_remind_keyword=1: {keyword_count}")
     return 0
