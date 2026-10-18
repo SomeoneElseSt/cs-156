@@ -1,0 +1,6 @@
+# Data, private files and MacOS Garbage
+data/*
+*.pem
+.DS_Store
+
+
