@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reminder classifier pipeline</title>
+<style>
+  body {
+    margin: 0;
+    padding: 24px 16px;
+    background: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  }
+  svg { display: block; width: 100%; max-width: 1200px; height: auto; margin: 0 auto; }
+  .title { font-size: 22px; font-weight: 700; fill: #111827; }
+  .subtitle { font-size: 13px; fill: #6b7280; }
+  .band { fill: #f8fafc; stroke: #e5e7eb; }
+  .band-label { font-size: 11px; font-weight: 700; letter-spacing: .12em; fill: #9ca3af; }
+  .node { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.5; }
+  .node.label-step { fill: #fff7ed; stroke: #f59e0b; }
+  .node.main { fill: #eff6ff; stroke: #2563eb; stroke-width: 2; }
+  .node.baseline { fill: #ffffff; stroke: #94a3b8; stroke-dasharray: 6 4; }
+  .node.eval { fill: #f5f3ff; stroke: #7c3aed; }
+  .step { font-size: 11px; font-weight: 700; fill: #9ca3af; }
+  .name { font-size: 16px; font-weight: 650; fill: #111827; }
+  .main-name { fill: #1d4ed8; }
+  .desc { font-size: 13px; fill: #4b5563; }
+  .chip { fill: #f1f5f9; }
+  .chip-text { font-size: 12px; font-weight: 600; fill: #334155; }
+  .local { fill: #fef3c7; }
+  .local-text { font-size: 11px; font-weight: 600; fill: #92400e; }
+  .edge { fill: none; stroke: #64748b; stroke-width: 1.75; }
+  .edge.dashed { stroke-dasharray: 5 4; stroke: #94a3b8; }
+  .edge-label { font-size: 11.5px; fill: #64748b; font-style: italic; }
+</style>
+</head>
+<body>
+<svg viewBox="0 0 1200 658"role="img" aria-label="Pipeline: Telegram export, parse and clean, label locally with a decision model, redact and save, stratified split, TF-IDF, three models, evaluate on the test set">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+    </marker>
+    <marker id="arrow-light" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <text class="title" x="20" y="36">Reminder classifier pipeline</text>
+  <text class="subtitle" x="20" y="58">From my Telegram history to a model that decides whether a message is a reminder ask</text>
+
+  <!-- Bands -->
+  <rect class="band" x="20" y="80" width="1160" height="200" rx="14"/>
+  <text class="band-label" x="1160" y="104" text-anchor="end">DATA PREPARATION</text>
+  <rect class="band" x="20" y="320" width="1160" height="318" rx="14"/>
+  <text class="band-label" x="1160" y="344" text-anchor="end">MODELLING AND EVALUATION</text>
+
+  <!-- Top row -->
+  <g>
+    <rect class="node" x="40" y="124" width="250" height="130" rx="10"/>
+    <text class="step" x="56" y="146">1</text>
+    <text class="name" x="56" y="168">Telegram export</text>
+    <text class="desc" x="56" y="190">Desktop app → HTML of my</text>
+    <text class="desc" x="56" y="207">chat with the assistant</text>
+    <rect class="chip" x="56" y="220" width="104" height="22" rx="11"/>
+    <text class="chip-text" x="108" y="235" text-anchor="middle">679 messages</text>
+  </g>
+  <g>
+    <rect class="node" x="330" y="124" width="250" height="130" rx="10"/>
+    <text class="step" x="346" y="146">2</text>
+    <text class="name" x="346" y="168">Parse &amp; clean</text>
+    <text class="desc" x="346" y="190">Keep my messages, drop the first</text>
+    <text class="desc" x="346" y="207">2 setup days, fillers, duplicates</text>
+    <rect class="chip" x="346" y="220" width="104" height="22" rx="11"/>
+    <text class="chip-text" x="398" y="235" text-anchor="middle">558 messages</text>
+  </g>
+  <g>
+    <rect class="node label-step" x="620" y="124" width="250" height="130" rx="10"/>
+    <text class="step" x="636" y="146">3</text>
+    <text class="name" x="636" y="168">Label locally</text>
+    <rect class="local" x="776" y="153" width="80" height="20" rx="10"/>
+    <text class="local-text" x="816" y="167" text-anchor="middle">on device</text>
+    <text class="desc" x="636" y="190">Perplexity Decider (27B) via</text>
+    <text class="desc" x="636" y="207">Ollama: reminder or other?</text>
+    <rect class="chip" x="636" y="220" width="176" height="22" rx="11"/>
+    <text class="chip-text" x="724" y="235" text-anchor="middle">257 reminder · 301 other</text>
+  </g>
+  <g>
+    <rect class="node" x="910" y="124" width="250" height="130" rx="10"/>
+    <text class="step" x="926" y="146">4</text>
+    <text class="name" x="926" y="168">Redact &amp; save</text>
+    <text class="desc" x="926" y="190">Names and places → &lt;redacted&gt;</text>
+    <text class="desc" x="926" y="207">One CSV row per message</text>
+    <rect class="chip" x="926" y="220" width="104" height="22" rx="11"/>
+    <text class="chip-text" x="978" y="235" text-anchor="middle">messages.csv</text>
+  </g>
+
+  <path class="edge" d="M290,189 H326" marker-end="url(#arrow)"/>
+  <path class="edge" d="M580,189 H616" marker-end="url(#arrow)"/>
+  <path class="edge" d="M870,189 H906" marker-end="url(#arrow)"/>
+
+  <!-- Wrap to second row -->
+  <path class="edge" d="M1035,254 V300 H165 V396" marker-end="url(#arrow)"/>
+
+  <!-- Bottom row -->
+  <g>
+    <rect class="node" x="40" y="400" width="250" height="130" rx="10"/>
+    <text class="step" x="56" y="422">5</text>
+    <text class="name" x="56" y="444">Stratified split</text>
+    <text class="desc" x="56" y="466">80 / 20, same reminder share</text>
+    <text class="desc" x="56" y="483">in both sets</text>
+    <rect class="chip" x="56" y="496" width="150" height="22" rx="11"/>
+    <text class="chip-text" x="131" y="511" text-anchor="middle">446 train · 112 test</text>
+  </g>
+  <g>
+    <rect class="node" x="330" y="400" width="250" height="130" rx="10"/>
+    <text class="step" x="346" y="422">6</text>
+    <text class="name" x="346" y="444">TF-IDF table</text>
+    <text class="desc" x="346" y="466">One row per message, one column</text>
+    <text class="desc" x="346" y="483">per word, fitted on train only</text>
+    <rect class="chip" x="346" y="496" width="96" height="22" rx="11"/>
+    <text class="chip-text" x="394" y="511" text-anchor="middle">1,883 words</text>
+  </g>
+
+  <!-- Models -->
+  <text class="step" x="620" y="364">7 · MODELS</text>
+  <g>
+    <rect class="node main" x="620" y="372" width="250" height="70" rx="10"/>
+    <text class="name main-name" x="636" y="402">Logistic regression</text>
+    <text class="desc" x="636" y="424">My model</text>
+  </g>
+  <g>
+    <rect class="node" x="620" y="458" width="250" height="70" rx="10"/>
+    <text class="name" x="636" y="488">Naive Bayes</text>
+    <text class="desc" x="636" y="510">Comparison</text>
+  </g>
+  <g>
+    <rect class="node baseline" x="620" y="544" width="250" height="70" rx="10"/>
+    <text class="name" x="636" y="574">Regex  \bremind\w*</text>
+    <text class="desc" x="636" y="596">Baseline, no training</text>
+  </g>
+
+  <path class="edge" d="M290,465 H326" marker-end="url(#arrow)"/>
+  <path class="edge" d="M580,465 C600,465 598,407 616,407" marker-end="url(#arrow)"/>
+  <path class="edge" d="M580,465 C600,465 598,493 616,493" marker-end="url(#arrow)"/>
+  <path class="edge dashed" d="M165,530 V579 H616" marker-end="url(#arrow-light)"/>
+  <text class="edge-label" x="330" y="571">raw text, no features</text>
+
+  <!-- Evaluate -->
+  <g>
+    <rect class="node eval" x="910" y="400" width="250" height="130" rx="10"/>
+    <text class="step" x="926" y="422">8</text>
+    <text class="name" x="926" y="444">Evaluate &amp; compare</text>
+    <text class="desc" x="926" y="466">Accuracy, precision, recall,</text>
+    <text class="desc" x="926" y="483">confusion matrix, mistakes</text>
+    <rect class="chip" x="926" y="496" width="150" height="22" rx="11"/>
+    <text class="chip-text" x="1001" y="511" text-anchor="middle">112 test messages</text>
+  </g>
+  <text class="edge-label" x="910" y="556">+ learning curves on the train set</text>
+
+  <path class="edge" d="M870,407 C890,407 888,450 906,450" marker-end="url(#arrow)"/>
+  <path class="edge" d="M870,493 C890,493 888,470 906,470" marker-end="url(#arrow)"/>
+  <path class="edge" d="M870,579 C892,579 888,490 906,490" marker-end="url(#arrow)"/>
+</svg>
+</body>
+</html>
